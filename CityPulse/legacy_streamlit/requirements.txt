@@ -1,0 +1,13 @@
+# CityPulse — backend/data
+streamlit
+pandas
+numpy
+plotly
+
+# Mapping (interactive city risk map)
+folium
+streamlit-folium
+
+# Installed for the documented Isolation Forest upgrade path (see pipeline.py
+# FUTURE_UPGRADE_NOTE); the MVP itself uses transparent mean + 2*std rules.
+scikit-learn

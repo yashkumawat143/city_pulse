@@ -1,0 +1,11 @@
+# CityPulse theme — a calm, professional "civic command center" look.
+[theme]
+base = "dark"
+primaryColor = "#00d1ff"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#171a21"
+textColor = "#fafafa"
+font = "sans serif"
+
+[server]
+headless = true

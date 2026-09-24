@@ -1,0 +1,21 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Environment / secrets
+.env
+.streamlit/secrets.toml
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Reference material
+_reference/
