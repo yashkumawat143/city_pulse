@@ -75,7 +75,7 @@ export default function Simulation({ snapshot, refresh, config, conn }) {
           <button type="button" className="btn" disabled={busy !== null || sim.status === "paused"}
                   onClick={() => run("Pause", () => api.sim("pause"))}>⏸ Pause</button>
           <button type="button" className="btn" disabled={busy !== null}
-                  onClick={() => run("Step", () => api.sim("step"))}>⏭ Step one tick (15 min)</button>
+                  onClick={() => run("Step", () => api.sim("step"))}>⏭ Step one tick (1 min)</button>
           <button type="button" className="btn ghost" disabled={busy !== null}
                   onClick={() => run("Reset", () => api.sim("reset"))}>⟲ Reset</button>
           <button type="button" className="btn ghost" disabled={busy !== null}
@@ -92,7 +92,7 @@ export default function Simulation({ snapshot, refresh, config, conn }) {
               {SCENARIOS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </Field>
-          <Field label="Speed" hint="1 tick = 15 simulated minutes; 10x ≈ 1 tick per second">
+          <Field label="Speed" hint="1 tick = 1 simulated minute; 10x ≈ 10 ticks per second">
             <select aria-label="Speed" value={sim.speed} disabled={busy !== null}
                     onChange={(e) => run("Speed", () => api.simSpeed(Number(e.target.value)))}>
               {SPEEDS.map((s) => <option key={s} value={s}>{s}x</option>)}
@@ -156,7 +156,7 @@ function SimulationTail({ snapshot, sourceToggle, busy, config }) {
         <Card title="How the demo behaves" subtitle="Expected sequence for the full civic disruption scenario">
           <ol className="why">
             <li>Rainfall in Zone A rises first; the EWMA baseline stays at the pre-storm level, so rainfall is flagged as an anomaly.</li>
-            <li>Traffic congestion follows with a lag of roughly 15 simulated minutes, then complaint volume and road incidents.</li>
+            <li>Traffic congestion follows after roughly 15 simulated minutes, then complaint volume and road incidents.</li>
             <li>With ≥{config.events.min_signals} co-active signals and ≥{config.events.min_confidence}% prototype confidence, a civic event is fused and a WATCH alert is raised.</li>
             <li>The event escalates (ESCALATING → PEAK), alerts rise to CRITICAL, and the weighted city health score falls.</li>
             <li>After the storm curve decays the event moves to RECOVERING and finally RESOLVED, and health returns toward HEALTHY.</li>

@@ -35,7 +35,7 @@ export default function Sources({ snapshot, config, conn, refresh }) {
           <div><dt>Data mode</dt><dd>{cov?.mode || "simulation"} — synthetic city telemetry</dd></div>
           <div><dt>External integrations</dt><dd>None connected (no government, sensor or weather API)</dd></div>
           <div><dt>Coverage</dt><dd>{cov?.coverage_pct ?? "—"}% of {cov?.metric_streams_total ?? "—"} metric streams live</dd></div>
-          <div><dt>City clock</dt><dd>{cityTime(cov?.city_time)} (1 tick = 15 simulated minutes)</dd></div>
+          <div><dt>City clock</dt><dd>{cityTime(cov?.city_time)} (1 tick = 1 simulated minute)</dd></div>
           <div><dt>Tick / scenario</dt><dd>{cov?.tick ?? "—"} · {cov?.scenario || "—"} · {cov?.speed ?? "—"}x</dd></div>
           <div><dt>History depth</dt><dd>{cov?.history_points ?? 0} samples per zone/metric</dd></div>
           <div><dt>Delivery channel</dt><dd>{conn === "LIVE" ? "WebSocket push" : `${conn} (REST fallback active)`}</dd></div>

@@ -759,7 +759,7 @@ class Sim:
                         penalties=dict(per_anomaly=1.5, per_anomaly_cap=15, per_event=5, per_event_cap=10),
                         note="Components are 0-100 (higher = healthier); weights re-normalise when a feed is offline."),
             sources=SOURCES, scenarios=list(SCEN), speeds=[0.5, 1, 2, 5, 10],
-            tick_minutes=15, tick_seconds=1.0,
+            tick_minutes=1, tick_seconds=1.0,
             disclaimer="Prototype indicators. Correlations are shown as possible links, never as causes.",
         )
 

@@ -79,7 +79,7 @@ export default function Anomalies({ config }) {
                     <td>{pctText(a.pct_change)}</td>
                     <td>{num(a.z_score, 2)}</td>
                     <td><SevBadge severity={a.severity} compact /></td>
-                    <td>{a.consecutive_steps} × 15 min</td>
+                    <td>{a.consecutive_steps} × 1 min</td>
                     <td>{clock(a.timestamp)}</td>
                     <td>
                       <button type="button" className="btn ghost" aria-expanded={open === a.id}

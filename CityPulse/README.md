@@ -70,7 +70,7 @@ If the backend runs elsewhere, copy `.env.example` to `frontend/.env` and set
 
 ## The 60–90 second demo
 
-1. Open **Simulation** → press **RUN FULL CIVIC DISRUPTION** (10x ≈ 1 min real time).
+1. Open **Simulation** → press **Run full civic disruption** (5x; about 80 seconds).
 2. Watch the **Dashboard**: City Health falls from ~90 (HEALTHY) as Zone A's rainfall
    rises; anomaly dots appear on the map.
 3. Traffic congestion, complaints, and road incidents follow with a visible ~15-minute

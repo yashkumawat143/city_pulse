@@ -92,6 +92,33 @@ nav a.active { color: #fff; background: linear-gradient(120deg, #1d4ed8, #6d28d9
   flex-basis: 100%; margin-top: 6px; padding: 12px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
 }
+.user-name { max-width: 150px; overflow: hidden; color: var(--mut); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --------------------------------------------------------------- authentication */
+.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 24px; }
+.auth-card {
+  width: min(100%, 440px); padding: 30px; background: linear-gradient(180deg, var(--surface), #0e172d);
+  border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow);
+}
+.auth-brand { display: flex; align-items: center; gap: 10px; font-weight: 750; letter-spacing: 2px; }
+.auth-brand .logo {
+  display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px;
+  background: linear-gradient(140deg, #0ea5e9, #7c3aed); color: #fff;
+}
+.auth-eyebrow { margin: 24px 0 5px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.auth-card h1 { font-size: 24px; }
+.auth-card > .muted { margin: 6px 0 22px; }
+.auth-form { display: grid; gap: 14px; }
+.auth-form label { display: grid; gap: 6px; color: #c4cff0; font-size: 12px; font-weight: 600; }
+.auth-form input {
+  width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px;
+  background: #0a1226; color: var(--txt); font: inherit;
+}
+.auth-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.auth-submit { width: 100%; margin-top: 4px; padding: 11px 14px; }
+.auth-switch { margin: 20px 0 0; text-align: center; color: var(--mut); font-size: 12px; }
+.auth-switch a { color: #7dd3fc; font-weight: 650; }
+.auth-note { margin: 18px 0 0; color: #7583a8; text-align: center; font-size: 11px; }
 
 /* ------------------------------------------------------------------- layout */
 main { max-width: 1520px; margin: 0 auto; padding: 18px 20px 8px; }

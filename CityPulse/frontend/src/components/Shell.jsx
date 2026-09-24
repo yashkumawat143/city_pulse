@@ -12,7 +12,7 @@ export const NAV = [
   ["/simulation", "Simulation"],
 ];
 
-export function TopBar({ conn, lastUpdate, snapshot, onRefresh }) {
+export function TopBar({ conn, lastUpdate, snapshot, onRefresh, user, onLogout }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="top">
@@ -38,6 +38,8 @@ export function TopBar({ conn, lastUpdate, snapshot, onRefresh }) {
         <button type="button" className="btn ghost" onClick={onRefresh} title="Re-sync with the backend now">
           ⟳ Sync
         </button>
+        <span className="user-name">{user?.name}</span>
+        <button type="button" className="btn ghost" onClick={onLogout}>Log out</button>
         <button type="button" className="btn ghost" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           Data source
         </button>
@@ -52,7 +54,7 @@ export function TopBar({ conn, lastUpdate, snapshot, onRefresh }) {
           </div>
           <dl className="kv compact">
             <div><dt>Data mode</dt><dd>{snapshot?.coverage?.mode || "simulation"}</dd></div>
-            <div><dt>City clock</dt><dd>{cityTime(snapshot?.coverage?.city_time)} (1 tick = 15 simulated min)</dd></div>
+            <div><dt>City clock</dt><dd>{cityTime(snapshot?.coverage?.city_time)} (1 tick = 1 simulated min)</dd></div>
             <div><dt>Tick</dt><dd>{snapshot?.coverage?.tick ?? "—"} · scenario {snapshot?.coverage?.scenario || "—"} · {snapshot?.coverage?.speed || "—"}x</dd></div>
             <div><dt>Coverage</dt><dd>{snapshot?.coverage?.coverage_pct ?? "—"}% of metric streams live
               {snapshot?.coverage?.offline_sources?.length ? ` (offline: ${snapshot.coverage.offline_sources.join(", ")})` : ""}</dd></div>

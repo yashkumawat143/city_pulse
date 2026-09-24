@@ -189,7 +189,7 @@ function ReadingsCard({ rdQ, rq, setRq, rZone, setRZone, rSev, setRSev, rMetric,
       )}
       <p className="muted small">
         Expected units — {METRICS.map((m) => `${metricLabel(m)}: ${metricUnit(m)}`).join(" · ")}. The window uses
-        simulated city minutes (1 tick = 15 min).
+        simulated city minutes (1 tick = 1 min).
       </p>
     </Card>
   );

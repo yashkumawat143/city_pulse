@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import api from "./lib/api";
+import { currentUser, logoutAccount } from "./lib/auth";
 import { useCityPulse } from "./hooks/useCityPulse";
 import { Footer, TopBar } from "./components/Shell";
 import EventDrawer from "./components/EventDrawer";
@@ -12,8 +13,24 @@ import Anomalies from "./pages/Anomalies";
 import Alerts from "./pages/Alerts";
 import Sources from "./pages/Sources";
 import Simulation from "./pages/Simulation";
+import { AuthPage } from "./pages/Auth";
 
 export default function App() {
+  const [user, setUser] = useState(currentUser);
+  const location = useLocation();
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser} />} />
+        <Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser} />} />
+        <Route path="*" element={<Navigate to="/login" replace state={{ from: location.pathname }} />} />
+      </Routes>
+    );
+  }
+  return <CityPulseApp user={user} onLogout={() => { logoutAccount(); setUser(null); }} />;
+}
+
+function CityPulseApp({ user, onLogout }) {
   const { snapshot, config, conn, lastUpdate, error, loading, refresh, live } = useCityPulse();
   const [eventId, setEventId] = useState(null);
   const [busyId, setBusyId] = useState(null);
@@ -39,7 +56,8 @@ export default function App() {
   return (
     <>
       <a className="skip-link" href="#main">Skip to main content</a>
-      <TopBar conn={conn} lastUpdate={lastUpdate} snapshot={snapshot} onRefresh={refresh} />
+      <TopBar conn={conn} lastUpdate={lastUpdate} snapshot={snapshot} onRefresh={refresh}
+              user={user} onLogout={onLogout} />
       {snapshot && !live && (
         <p className="banner warn" role="status">
           Live WebSocket unavailable — showing REST fallback data ({String(conn).toLowerCase()}). Monitoring stays
@@ -67,6 +85,8 @@ export default function App() {
         {snapshot && (
           <ErrorBoundary>
             <Routes>
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
               <Route path="/" element={<Dashboard snapshot={snapshot} onInspectEvent={inspectEvent}
                                                   onEventAction={onEventAction} busyId={busyId} />} />
               <Route path="/events" element={<Events snapshot={snapshot} onInspectEvent={inspectEvent}
