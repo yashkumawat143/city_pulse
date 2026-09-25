@@ -27,8 +27,15 @@ export function useCityPulse() {
   const alive = useRef(true);
   const restOk = useRef(false);
 
+  /**
+   * Accept only structurally valid snapshots. A dev server returning index.html
+   * for /api, a proxy hiccup, or a partial WS frame must never reach the UI as
+   * state — a malformed snapshot used to crash the dashboard on `kpis.events_total`.
+   */
   const applySnapshot = useCallback((data) => {
-    if (!data || typeof data !== "object") return;
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    if (!data.kpis || typeof data.kpis !== "object") return;      // core shape check
+    if (!Array.isArray(data.zones) || data.zones.length === 0) return;
     setSnapshot(data);
     setLastUpdate(new Date());
     setError(null);

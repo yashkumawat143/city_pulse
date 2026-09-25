@@ -22,7 +22,10 @@ async function passwordHash(password, salt) {
 }
 
 export async function registerAccount(name, password) {
-  const normalizedName = name.trim().toLowerCase();
+  const displayName = name.trim();
+  const normalizedName = displayName.toLowerCase();
+  if (!displayName) throw new Error("Please enter a name for your account.");
+  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters.");
   const accounts = readAccounts();
   if (accounts[normalizedName]) throw new Error("An account with this name already exists.");
   if (!globalThis.crypto?.subtle) throw new Error("Secure password storage is unavailable in this browser.");
@@ -30,10 +33,12 @@ export async function registerAccount(name, password) {
   const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
   const saltHex = bytesToHex(salt);
   const hash = await passwordHash(password, salt);
-  accounts[normalizedName] = { name: name.trim(), salt: saltHex, hash };
+  accounts[normalizedName] = { name: displayName, salt: saltHex, hash };
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-  sessionStorage.setItem(SESSION_KEY, normalizedName);
-  return { name: name.trim() };
+  // Auto sign-in: creating an account immediately opens the session,
+  // so the user lands straight into the website without a second login.
+  try { sessionStorage.setItem(SESSION_KEY, normalizedName); } catch { /* storage may be disabled */ }
+  return { name: displayName };
 }
 
 export async function loginAccount(name, password) {

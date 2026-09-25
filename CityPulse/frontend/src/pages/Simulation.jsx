@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../lib/api";
 import { PipelineFlow, SourcesTable } from "../components/panels";
+import ReplayBar, { ProgressionPanel } from "../components/ReplayBar";
 import { Card, Empty, Field, Loading, SevBadge, StatusPill, Tag } from "../components/ui";
 import { cityTime, clock } from "../lib/format";
 
@@ -18,6 +19,14 @@ export default function Simulation({ snapshot, refresh, config, conn }) {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const sim = snapshot.sim;
+  // Prefer the backend's scenario registry (labels + descriptions) over the local fallback list.
+  const registry = Array.isArray(config?.scenario_registry) && config.scenario_registry.length
+    ? config.scenario_registry
+    : null;
+  const scenarios = registry
+    ? registry.map((s) => ({ value: s.value, label: s.label || s.value, description: s.description }))
+    : SCENARIOS;
+  const activeScenario = scenarios.find((s) => s.value === sim.scenario);
 
   const run = async (label, fn) => {
     setBusy(label);
@@ -105,6 +114,22 @@ export default function Simulation({ snapshot, refresh, config, conn }) {
           change is computed by the Python engine and pushed back over WebSocket (or fetched by the REST fallback
           while the socket reconnects).
         </p>
+      </Card>
+
+      <Card
+        title="Scenario progression"
+        subtitle="The active scenario's intensity curves with the engine's current position"
+        badge={<Tag tone="info">/api/progression</Tag>}
+      >
+        <ProgressionPanel />
+      </Card>
+
+      <Card
+        title="Replay"
+        subtitle="Scrub through recorded frames — one per simulated minute, straight from the engine"
+        badge={<Tag tone="info">/api/replay</Tag>}
+      >
+        <ReplayBar refreshKey={sim.tick} />
       </Card>
 
       <Card title="Pipeline status" subtitle="Live counts at each stage of the real processing chain"

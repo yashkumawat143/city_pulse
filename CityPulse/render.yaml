@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: citypulse-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: CITYPULSE_ALLOWED_ORIGINS
+        value: https://citypulse-frontend.vercel.app
+      - key: CITYPULSE_ANOMALY_Z
+        value: "2.0"
+      - key: CITYPULSE_ANOMALY_PERSISTENCE
+        value: "0"

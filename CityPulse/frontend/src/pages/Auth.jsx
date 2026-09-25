@@ -29,7 +29,7 @@ export function AuthPage({ mode, onAuthenticated }) {
         ? await registerAccount(name, password)
         : await loginAccount(name, password);
       onAuthenticated(user);
-      navigate(destination, { replace: true });
+      navigate(isRegister ? "/" : destination, { replace: true });
     } catch (e) {
       setError(e.message || "Could not complete your request.");
     } finally {

@@ -65,8 +65,30 @@ npm run dev
 # → http://localhost:5173
 ```
 
-If the backend runs elsewhere, copy `.env.example` to `frontend/.env` and set
-`VITE_API_URL` / `VITE_WS_URL`.
+Dev proxying is preconfigured: `vite.config.js` forwards `/api` and the `/ws`
+WebSocket to `http://127.0.0.1:8000` (override with the `BACKEND_URL` env var),
+so no frontend `.env` is needed for local development. If the backend runs
+elsewhere — or for a single-origin production build — copy `.env.example` to
+`frontend/.env` and set `VITE_API_URL` / `VITE_WS_URL` instead.
+
+## Live city map
+
+The dashboard map is a Google-Maps-style Leaflet view over the backend zone
+registry (stable synthetic coordinates, never randomised per render):
+
+- **Four free basemaps** — Streets (OSM), Satellite (Esri imagery + place
+  labels), Terrain (OpenTopoMap) and Night (Esri Dark Gray Canvas). All are
+  key-less; CARTO dark tiles were dropped because they now require an API key
+  and render "API KEY REQUIRED" watermarks.
+- **Zone search** with results dropdown — Enter or click flies to the zone and
+  opens its place card (health chips, live metric readings, zoom button).
+- **Layer toggles** for zones / anomaly dots / civic-event footprints; the
+  cursor readout shows live coordinates + zoom; a legend explains every colour
+  (severity never communicated by colour alone).
+- **Locate me** (browser geolocation), **fit-all-markers**, zoom stack and
+  true fullscreen, with `invalidateSize` handling for grid/resize changes.
+- Event footprints show state + confidence tooltips and link straight into the
+  event evidence drawer; invalid/missing coordinates are skipped and counted.
 
 ## The 60–90 second demo
 
@@ -126,9 +148,34 @@ resolves its anomalies and the rest keep running).
 - **Prediction** — least-squares trend over the last 30 minutes, extrapolated +30 min,
   shown as a range with trend strength. Prototype estimate, not a forecast.
 
+## Deploy
+
+The repo ships deploy-ready: `backend/Dockerfile` + `render.yaml` (Render) and
+`frontend/vercel.json` (Vercel, SPA rewrites). `frontend/.env.example` documents both
+local and production API/WS URLs.
+
+**Backend → Render (Docker, free tier works):**
+1. Push this folder to GitHub.
+2. Render → New → Blueprint → select the repo (`render.yaml` creates
+   `citypulse-backend` from `backend/Dockerfile`, health check `/api/health`).
+3. Note the public URL, e.g. `https://citypulse-backend.onrender.com`.
+
+**Frontend → Vercel:**
+1. Vercel → New Project → select the repo, root directory `frontend`.
+2. Environment variables:
+   - `VITE_API_URL=https://citypulse-backend.onrender.com`
+   - `VITE_WS_URL=wss://citypulse-backend.onrender.com/ws/citypulse`
+3. Deploy. `vercel.json` handles SPA routing + `npm run build` output (`dist`).
+
+**After deploy:** set Render env `CITYPULSE_ALLOWED_ORIGINS=https://<your-app>.vercel.app`
+(no `*` in production) and redeploy the backend. Verify:
+`GET https://<backend>/api/health → {"status":"ok"}` and the Vercel app loads the
+dashboard with a LIVE badge. Note: Render free tier sleeps when idle — first load
+wakes it (~30–60 s); the frontend keeps usable REST fallback + reconnect meanwhile.
+
 ## Limitations
 
 Synthetic data for a fictional city · prototype confidence/health indicators · 3 zones ·
 simple linear prediction · Pearson-only correlations (no nonlinear or causal inference) ·
-no real government APIs · no authentication/production deployment · single-process
-in-memory state.
+no real government APIs · in-memory state (a backend restart clears the run; use
+reset/demo endpoints) · frontend demo login only (localStorage, no server auth).

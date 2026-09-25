@@ -269,6 +269,108 @@ def test_websocket_channel():
         check(c.get("/api/health").json()["clients"] == 0, "client count cleaned up after WS close")
 
 
+def test_intelligence_engine_scores_ml_classification_and_leakage():
+    """Civic Event Intelligence Engine: anomaly score, ML layer, confidence breakdown,
+    event classification, risk engine, attention/timeline/analyst, and no future leakage."""
+    s = cp.Sim(seed=11)
+    s.reset(11, "full_disruption", True)
+    peak = 0
+    for _ in range(120):
+        s.step()
+        peak = max(peak, sum(1 for x in s.anoms.values() if x["status"] == "active"))
+    check(peak >= 1, "intelligence: anomalies fire in full_disruption", str(peak))
+    a1 = next((x for x in s.anoms.values() if x["status"] == "active"), None)
+    check(a1 is not None and 0 <= a1.get("anomaly_score", -1) <= 100,
+          "intelligence: anomaly_score within 0-100", str(a1 and a1.get("anomaly_score")))
+    check(a1 is not None and a1.get("score_band") in [lbl for _, lbl in cp.ANOMALY_BAND_LABELS],
+          "intelligence: score band label is from the configurable registry", str(a1 and a1.get("score_band")))
+    check(a1 is not None and a1.get("rolling_30") is not None, "intelligence: rolling 30-min deviation feature")
+    if cp.SKLEARN:
+        check(a1 is not None and a1.get("ml_anomaly_score") is not None
+              and 0 <= a1["ml_anomaly_score"] <= 100 and a1.get("ml_model") == "IsolationForest",
+              "intelligence: Isolation Forest ML score present and bounded", str(a1 and a1.get("ml_anomaly_score")))
+    d = next((x for x in s.disr.values() if x["state"] != "RESOLVED"), None)
+    check(d is not None, "intelligence: multi-signal event detected")
+    if d:
+        bd = d.get("confidence_breakdown") or {}
+        check(sorted(bd) == sorted(cp.CONF_W), "intelligence: confidence has all five weighted components",
+              ",".join(sorted(bd)))
+        check(all(0 <= v <= 100 for v in bd.values()), "intelligence: components are 0-100")
+        weighted = round(sum(cp.CONF_W[k] * v for k, v in bd.items()))
+        check(abs(weighted - d["confidence"]) <= 1, "intelligence: confidence = weighted sum of components",
+              f"{weighted} vs {d['confidence']}")
+        check(d.get("event_type") in cp.EVENT_TYPES and d.get("event_label"),
+              "intelligence: event classified via the registry", str(d.get("event_type")))
+        check(d.get("trend") in ("escalating", "stable", "recovering", "developing"),
+              "intelligence: event exposes a trajectory trend", str(d.get("trend")))
+        check(d.get("risk") is not None and d.get("risk_band") in ("LOW", "MODERATE", "HIGH", "CRITICAL"),
+              "intelligence: event carries risk score + band", str(d.get("risk_band")))
+        check(d["risk_band"] == cp.risk_band(d["risk"]), "intelligence: risk band matches the band function")
+    lags = {p["lag_minutes"] for c in s.corrs.values() if c
+            for p in (c.get("lagged_all") or c.get("lagged", []))}
+    check(lags.issubset(set(cp.LAGS)) and max(lags or {0}) == 60,
+          "intelligence: lag set includes 0/15/30/45/60", str(sorted(lags)))
+    check(cp.Sim(seed=1).meta()["correlation"]["lags_minutes"] == list(cp.LAGS),
+          "intelligence: meta documents the lag set")
+    att = s.attention()
+    check(att.get("level") in ("ALL_CLEAR", "LOW", "MODERATE", "HIGH", "CRITICAL"),
+          "attention: level is a known band", str(att.get("level")))
+    check(bool(att.get("text")) and isinstance(att.get("signals", []), list),
+          "attention: narrative + signal list present")
+    tl = s.timeline()
+    check(len(tl) > 0 and all(tl[i]["t"] <= tl[i + 1]["t"] for i in range(len(tl) - 1)),
+          "timeline: chronological order from real records", str(len(tl)))
+    an = s.analyst()
+    check(bool(an.get("narrative")) and bool(an.get("engine")), "analyst: narrative + engine reported")
+    check(an.get("event") is not None and an["event"].get("confidence") is not None,
+          "analyst: payload carries the detected event")
+    check(all(max((t for t, _ in ser), default=0) <= s.t for ser in s.zone_series.values()),
+          "leakage: all series rows are <= current tick", str(s.t))
+    target = ("Zone A", "rainfall")
+    before = {i["metric"]: (i["value"], i["current"]) for i in s.predict("Zone A")["items"]}
+    roll_before = s.rolling("Zone A", "rainfall", 30)
+    s.zone_series[target].append((s.t + 90, 9999.0))       # poison the future
+    s.correlate()
+    after = {i["metric"]: (i["value"], i["current"]) for i in s.predict("Zone A")["items"]}
+    roll_after = s.rolling("Zone A", "rainfall", 30)
+    check(before == after, "leakage: forecasts unchanged when the future is poisoned", str(len(before)))
+    check(roll_after == roll_before, "leakage: rolling windows ignore future rows")
+    s.zone_series[target].pop()                            # clean up
+    pr = s.predict()["items"][0]
+    check(pr.get("model") and pr.get("horizon_min") == 30 and pr.get("confidence") is not None
+          and pr.get("timestamp"), "forecast: model/horizon/confidence/timestamp present")
+    rk = s.risk("Zone A")
+    check(0 <= rk["score"] <= 100 and rk["band"] == cp.risk_band(rk["score"]),
+          "risk: score bounded + band consistent", f"{rk['score']} {rk['band']}")
+
+
+def test_intelligence_api_endpoints():
+    with TestClient(cp.app) as c:
+        c.post("/api/simulation/pause")
+        c.post("/api/simulation/reset", json={"seed": 42})
+        for _ in range(90):
+            c.post("/api/simulation/step")
+        att = c.get("/api/attention").json()
+        check(att.get("level") in ("ALL_CLEAR", "LOW", "MODERATE", "HIGH", "CRITICAL"),
+              "API: /api/attention returns a level", str(att.get("level")))
+        tl = c.get("/api/timeline").json()
+        check(isinstance(tl, list) and len(tl) > 0, "API: /api/timeline returns items", str(len(tl)))
+        risk = c.get("/api/risk").json()
+        check("city" in risk and "zones" in risk and 0 <= risk["city"]["score"] <= 100,
+              "API: /api/risk exposes city + zones", str(risk.get("city", {}).get("score")))
+        an = c.get("/api/analyst").json()
+        check(bool(an.get("narrative")) and bool(an.get("engine")), "API: /api/analyst narrative")
+        check(c.get("/api/analyst?event_id=disr-9999").status_code == 404,
+              "API: unknown analyst event -> 404")
+        dash = c.get("/api/dashboard").json()
+        for key in ("attention", "timeline", "risk"):
+            check(key in dash, f"API: dashboard carries {key}")
+        anom = c.get("/api/anomalies?status=active").json()
+        if anom:
+            check(0 <= anom[0].get("anomaly_score", -1) <= 100,
+                  "API: anomaly payload exposes the 0-100 score", str(anom[0].get("anomaly_score")))
+
+
 def main_():
     groups = [
         ("engine", [test_engine_anomaly_detection_is_deterministic_and_explainable,
@@ -277,7 +379,9 @@ def main_():
                     test_full_pipeline_event_lifecycle_engine,
                     test_engine_lifecycle_transition_validation,
                     test_alert_and_offline_feed_handling]),
-        ("api", [test_api_surface_and_schemas, test_api_end_to_end_simulation_flow, test_websocket_channel]),
+        ("intelligence", [test_intelligence_engine_scores_ml_classification_and_leakage]),
+        ("api", [test_api_surface_and_schemas, test_intelligence_api_endpoints,
+                 test_api_end_to_end_simulation_flow, test_websocket_channel]),
     ]
     for name, fns in groups:
         print(f"\n=== {name} ===")

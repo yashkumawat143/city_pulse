@@ -8,6 +8,143 @@ import { Card, Empty, HealthPill, LevelBadge, Meter, SevBadge, StatusPill, Tag }
 export const CHART_AXIS = { stroke: "#7f8db8", fontSize: 11 };
 export const TOOLTIP_STYLE = { background: "#0e1730", border: "1px solid #26324f", borderRadius: 10, fontSize: 12, color: "#e8eeff" };
 
+export function AttentionPanel({ attention, eventId, onInspectEvent }) {
+  const a = attention;
+  if (!a) return null;
+  return (
+      <Card title="What needs attention?" subtitle={a.headline || "Prioritised view built from live evidence"}
+            badge={<Tag tone={a.level === "CRITICAL" || a.level === "HIGH" ? "warn" : a.level === "ALL_CLEAR" ? "info" : "warn"}>{a.level}</Tag>}
+            actions={eventId && (
+              <button type="button" className="btn ghost" onClick={() => onInspectEvent(eventId)}>View event detail</button>
+            )}>
+        {a.level === "ALL_CLEAR" ? (
+          <Empty title="Nothing urgent needs attention"
+                 hint={a.text || "No active multi-signal events. City signals are within expected ranges."} />
+        ) : (
+          <>
+            <div className="row wrap gap">
+              <Tag tone="info">State {a.state}</Tag>
+              <Tag tone="warn">Trend {a.trend}</Tag>
+              {a.confidence != null && <Tag tone="info">Confidence {a.confidence}%</Tag>}
+              {a.risk && (
+                <span className="row wrap gap">
+                  <b style={{ color: riskColor(a.risk.score) }}>Risk {a.risk.score}/100</b>
+                  <Tag tone={a.risk.band === "CRITICAL" ? "warn" : "info"}>{a.risk.band}</Tag>
+                </span>
+              )}
+            </div>
+            {a.signals?.length > 0 && (
+              <>
+                <h3 className="sub-title">Strongest signals</h3>
+                {a.signals.map((s) => (
+                  <div key={s.metric} className="meter-row">
+                    <span>{s.label} <small>{s.current} {s.unit} · z {s.z} · {s.band}</small></span>
+                    <b>{s.score ?? "—"}</b>
+                    <Meter value={s.score ?? 0} color={riskColor(s.score ?? 0)} label={`${s.label} anomaly score`} />
+                  </div>
+                ))}
+              </>
+            )}
+            {a.recommendations?.length > 0 && (
+              <>
+                <h3 className="sub-title">Recommended checks</h3>
+                <ul className="why">{a.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
+              </>
+            )}
+            {a.early_warnings?.length > 0 && (
+              <p className="inline-warn">
+                Early warning: {a.early_warnings.map((w) => `${w.zone} at ${w.confidence}% confidence`).join(", ")} — below the event threshold, watching closely.
+              </p>
+            )}
+            <p className="muted small">{a.text}</p>
+          </>
+        )}
+      </Card>
+    );
+}
+
+const RISK_TONE = (band) => (band === "CRITICAL" || band === "HIGH" ? "warn" : "info");
+
+function riskColor(score) {
+  return score > 75 ? "#f87171" : score > 50 ? "#fb923c" : score > 25 ? "#facc15" : "#34d399";
+}
+
+export function RiskPanel({ risk }) {
+  if (!risk) return null;
+  return (
+    <Card title="Risk engine" subtitle="0-100 evidence-based risk — separate from anomaly severity and health">
+      <div className="health-top">
+        <span className="health-score" style={{ color: riskColor(risk.score) }}>{risk.score}</span>
+        <Tag tone={RISK_TONE(risk.band)}>{risk.band}</Tag>
+        <span className="muted small">worst zone: {risk.zone}</span>
+      </div>
+      {Object.entries(risk.zones || {}).map(([z, v]) => (
+        <div key={z} className="meter-row">
+          <span>{z}</span><b>{v}</b>
+          <Meter value={v} color={riskColor(v)} label={`risk ${z}`} />
+        </div>
+      ))}
+      <p className="muted small">{risk.note}</p>
+    </Card>
+  );
+}
+
+export function TimelinePanel({ timeline, onInspect }) {
+  const items = [...(timeline || [])].slice(-40).reverse();
+  return (
+    <Card title="Event timeline" subtitle="Chronological detection history — built only from real backend records"
+          badge={<Tag tone="info">{items.length} entries</Tag>}>
+      {items.length === 0 ? (
+        <Empty title="No timeline entries yet"
+               hint="Anomalies, event lifecycle transitions and alerts appear here as they are detected." />
+      ) : (
+        <ul className="timeline">
+          {items.map((it, i) => (
+            <li key={`${it.ref}-${it.t}-${i}`}>
+              <b>{clock(it.t)}</b>
+              <span>
+                <Tag tone={it.severity === "critical" || it.severity === "high" ? "warn" : "info"}>{it.kind}</Tag>{" "}
+                <span className="strong">{it.title}</span>
+                {onInspect && it.kind === "event" && (
+                  <button type="button" className="btn ghost" onClick={() => onInspect(it.ref)}>Open</button>
+                )}
+                <span className="muted small"> — {it.text} · {it.zone}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+const CONF_LABELS = {
+  anomaly_strength: "Anomaly strength",
+  signal_diversity: "Signal diversity",
+  temporal_proximity: "Temporal proximity",
+  persistence: "Persistence",
+  spatial_concentration: "Spatial concentration",
+};
+
+export function ConfidenceBreakdown({ breakdown, weights }) {
+  const entries = Object.entries(breakdown || {});
+  if (!entries.length) return null;
+  return (
+    <>
+      {entries.map(([k, v]) => (
+        <div key={k} className="meter-row">
+          <span>{CONF_LABELS[k] || k}
+            <small>{weights?.[k] != null ? `${Math.round(weights[k] * 100)}% weight` : ""}</small></span>
+          <b>{Math.round(v)}</b>
+          <Meter value={v} color="#22d3ee" label={CONF_LABELS[k] || k} />
+        </div>
+      ))}
+      <p className="muted small">
+        Confidence = weighted sum of these five 0-100 components — a prototype score, not a probability.
+      </p>
+    </>
+  );
+}
 export function KpiGrid({ kpis, health }) {
   const items = [
     { to: "/", label: "City health", value: health.score, suffix: "/100", note: health.status,
@@ -321,11 +458,13 @@ export function SourcesTable({ sources, onToggle, busy }) {
 }
 
 export function PipelineFlow({ snapshot, conn }) {
-  const k = snapshot.kpis;
+  const k = snapshot.kpis || {};
+  const coverage = snapshot.coverage || {};
+  const sim = snapshot.sim || {};
   const stages = [
-    { name: "1 · Simulation", detail: `${snapshot.sim.scenario} @ ${snapshot.sim.speed}x`, count: snapshot.sim.tick, unit: "ticks" },
-    { name: "2 · Ingestion", detail: `${snapshot.coverage.metric_streams_live}/${snapshot.coverage.metric_streams_total} streams`, count: k.events_total, unit: "readings" },
-    { name: "3 · Analytics", detail: "EWMA baselines per zone × metric", count: snapshot.what_changed.length, unit: "tracked" },
+    { name: "1 · Simulation", detail: `${sim.scenario ?? "—"} @ ${sim.speed ?? "—"}x`, count: sim.tick ?? 0, unit: "ticks" },
+    { name: "2 · Ingestion", detail: `${coverage.metric_streams_live ?? "—"}/${coverage.metric_streams_total ?? "—"} streams`, count: k.events_total ?? 0, unit: "readings" },
+    { name: "3 · Analytics", detail: "EWMA baselines per zone × metric", count: (snapshot.what_changed || []).length, unit: "tracked" },
     { name: "4 · Anomaly detection", detail: "z-score + practical floor", count: k.anomalies, unit: "active" },
     { name: "5 · Correlation", detail: "lagged pairs 0/15/30 min", count: k.correlations, unit: "active" },
     { name: "6 · Event fusion", detail: "≥3 signals in one zone", count: k.disruptions, unit: "active" },

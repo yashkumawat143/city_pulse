@@ -1,15 +1,24 @@
 /**
  * Single source of truth for CityPulse backend configuration + REST access.
- * Set VITE_API_URL / VITE_WS_URL in frontend/.env to point at another host.
+ * - Local dev (Vite :5173): set VITE_API_URL=http://127.0.0.1:8000 in frontend/.env
+ * - Single-origin (backend serves frontend/dist, tunnel/production): leave
+ *   VITE_API_URL empty so all calls are relative (same host, no CORS issues).
  */
 const env = import.meta.env || {};
 
-export const API_BASE = (env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const RAW_BASE = String(env.VITE_API_URL ?? "").trim();
+
+export const API_BASE = RAW_BASE.replace(/\/$/, "");
 
 export function wsUrl() {
   if (env.VITE_WS_URL) return env.VITE_WS_URL;
-  const base = API_BASE.replace(/^http/, "ws");
-  return `${base}/ws/citypulse`;
+  if (API_BASE) {
+    const base = API_BASE.replace(/^http/, "ws");
+    return `${base}/ws/citypulse`;
+  }
+  // Same-origin WebSocket (tunnel / production): derive from the page URL.
+  const proto = window.location.protocol === "https:" ? "wss" : "ws";
+  return `${proto}://${window.location.host}/ws/citypulse`;
 }
 
 export const REQUEST_TIMEOUT = 10000;
@@ -66,8 +75,15 @@ export const api = {
   config: () => request("/api/config"),
   dashboard: (opts) => request("/api/dashboard", opts),
   summary: () => request("/api/summary"),
+  attention: () => request("/api/attention"),
+  timeline: (limit = 80) => request(`/api/timeline?limit=${limit}`),
+  risk: () => request("/api/risk"),
+  analyst: (eventId) => request(`/api/analyst${qs(eventId ? { event_id: eventId } : {})}`),
   metrics: () => request("/api/metrics"),
   trends: (minutes = 60) => request(`/api/trends?minutes=${minutes}`),
+  progression: () => request("/api/progression"),
+  replay: (limit = 600) => request(`/api/replay?limit=${limit}`),
+  replayFrame: (tick) => request(`/api/replay/${tick}`),
   zones: () => request("/api/zones"),
   sources: () => request("/api/sources"),
   anomalies: (params, opts) => request(`/api/anomalies${qs(params)}`, opts),

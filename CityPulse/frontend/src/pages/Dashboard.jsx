@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import CityMap from "../components/CityMap";
-import { ActiveEventsPanel, EventStream, HealthBreakdown, KpiGrid, TrendChart, WhatChangedTable, WhyNowPanel } from "../components/panels";
+import { ActiveEventsPanel, AttentionPanel, EventStream, HealthBreakdown, KpiGrid, RiskPanel, TimelinePanel, TrendChart, WhatChangedTable, WhyNowPanel } from "../components/panels";
 import { Card, Empty, Select, Tag } from "../components/ui";
 import { int, metricLabel, num } from "../lib/format";
 
@@ -15,12 +15,13 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
 
   return (
     <div className="stack">
+      <AttentionPanel attention={d.attention} eventId={focusEvent?.id} onInspectEvent={onInspectEvent} />
       <KpiGrid kpis={d.kpis} health={d.health} />
 
       <div className="grid-main">
         <Card
           title="Live city map"
-          subtitle="Zone health, active anomalies and civic events on stable synthetic coordinates"
+          subtitle="Search zones, switch basemaps (Streets / Satellite / Terrain / Night) and inspect health, anomalies and civic events on stable synthetic coordinates"
           badge={<Tag tone="warn">Simulated</Tag>}
         >
           <CityMap zones={d.zones} anomalies={d.anomalies} events={events} onSelectEvent={(e) => onInspectEvent(e.id)} />
@@ -30,6 +31,11 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
       </div>
 
       <ActiveEventsPanel events={events} onInspect={onInspectEvent} onAction={onEventAction} busyId={busyId} />
+
+      <div className="grid-main">
+        <TimelinePanel timeline={d.timeline} onInspect={onInspectEvent} />
+        <RiskPanel risk={d.risk} />
+      </div>
 
       <div className="grid-main">
         <Card
@@ -59,7 +65,8 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
                     <span>{p.trend === "up" ? "▲" : p.trend === "down" ? "▼" : "■"} {p.trend_strength}</span>
                   </div>
                   <div className="muted small">
-                    now {num(p.current)} {p.unit} · est. {p.range_low}–{p.range_high} {p.unit} in 30 min
+                    now {num(p.current)} {p.unit} · est. {p.range_low}–{p.range_high} {p.unit} in {p.horizon_min ?? 30} min
+                    {" · "}{p.model} · confidence {p.confidence}%
                   </div>
                   <div className="muted small">{p.text}</div>
                 </li>
@@ -108,7 +115,7 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
                 <tr key={z.zone}>
                   <td><b>{z.zone}</b></td>
                   <td>{z.health}/100</td>
-                  <td>{z.risk}</td>
+                  <td>{z.risk}{z.risk_band ? <Tag tone={z.risk_band === "CRITICAL" || z.risk_band === "HIGH" ? "warn" : "info"}> {z.risk_band}</Tag> : null}</td>
                   <td>{z.anomalies}</td>
                   <td className="muted small">
                     {Object.entries(z.metrics || {}).map(([k, v]) => `${metricLabel(k)} ${v}`).join(" · ")}
@@ -120,7 +127,7 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
           </table>
         </div>
         <p className="muted small">
-          Total readings processed this run: {int(d.kpis.events_total)} ·{" "}
+          Total readings processed this run: {int(d.kpis?.events_total)} ·{" "}
           <Link to="/simulation">open simulation controls</Link> to drive the pipeline end to end.
         </p>
       </Card>

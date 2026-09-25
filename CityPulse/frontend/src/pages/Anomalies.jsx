@@ -65,6 +65,7 @@ export default function Anomalies({ config }) {
                 <tr>
                   <th scope="col">Metric</th><th scope="col">Zone</th><th scope="col">Baseline</th>
                   <th scope="col">Current</th><th scope="col">Change</th><th scope="col">Z-score</th>
+                  <th scope="col">Score</th>
                   <th scope="col">Severity</th><th scope="col">Persistence</th><th scope="col">First seen</th>
                   <th scope="col">Detail</th>
                 </tr>
@@ -78,6 +79,10 @@ export default function Anomalies({ config }) {
                     <td>{a.current} {a.unit}</td>
                     <td>{pctText(a.pct_change)}</td>
                     <td>{num(a.z_score, 2)}</td>
+                    <td title={a.ml_anomaly_score != null ? `ML IsolationForest: ${a.ml_anomaly_score}/100` : "ML layer warming up"}>
+                      <b>{a.anomaly_score ?? "—"}</b>
+                      <span className="muted small"> {a.score_band || ""}</span>
+                    </td>
                     <td><SevBadge severity={a.severity} compact /></td>
                     <td>{a.consecutive_steps} × 1 min</td>
                     <td>{clock(a.timestamp)}</td>
@@ -102,6 +107,11 @@ export default function Anomalies({ config }) {
               <div><dt>Threshold</dt><dd>{opened.threshold ?? "—"} {opened.unit}</dd></div>
               <div><dt>Deviation</dt><dd>{opened.deviation} {opened.unit}</dd></div>
               <div><dt>Signal strength</dt><dd>{num(opened.strength, 2)} (0-1, derived from |z| / 6)</dd></div>
+              <div><dt>Anomaly score</dt><dd>{opened.anomaly_score ?? "—"}/100 · {opened.score_band || "—"}</dd></div>
+              <div><dt>ML layer (Isolation Forest)</dt><dd>{opened.ml_anomaly_score != null
+                ? `${opened.ml_anomaly_score}/100${opened.ml_flagged ? " · flagged as outlier" : " · within cluster"}`
+                : "warming up (needs 30 clean rows)"}</dd></div>
+              <div><dt>Rolling 15/30/60 min</dt><dd>{[opened.rolling_15, opened.rolling_30, opened.rolling_60].map((v) => v ?? "—").join(" / ")} {opened.unit}</dd></div>
               <div><dt>Coordinates</dt><dd>{opened.latitude}, {opened.longitude}</dd></div>
               <div><dt>Anomaly id</dt><dd>{opened.id}</dd></div>
               <div><dt>Last update</dt><dd>{clock(opened.updated)}</dd></div>
@@ -125,6 +135,15 @@ function ConfigCard({ config }) {
             <div><dt>Z threshold</dt><dd>{config.anomaly.z_threshold}σ</dd></div>
             <div><dt>Extra persistence</dt><dd>{config.anomaly.extra_persistence_ticks} extra tick(s) required</dd></div>
             <div><dt>Correlation</dt><dd>{config.correlation.method} · lags {config.correlation.lags_minutes.join("/")} min</dd></div>
+            {config.anomaly.score && (
+              <div><dt>Anomaly score</dt><dd>{config.anomaly.score.method} · bands {Object.entries(config.anomaly.score.bands).map(([k, v]) => `${k}≤${v}`).join(", ")}</dd></div>
+            )}
+            {config.anomaly.ml?.available && (
+              <div><dt>ML layer</dt><dd>{config.anomaly.ml.model} · window {config.anomaly.ml.window_min} min · contamination {config.anomaly.ml.contamination} · refit every {config.anomaly.ml.refit_ticks ?? "—"} ticks</dd></div>
+            )}
+            {config.risk && (
+              <div><dt>Risk bands</dt><dd>LOW ≤{config.risk.bands.low} · MODERATE ≤{config.risk.bands.moderate} · HIGH ≤{config.risk.bands.high} · CRITICAL &gt;{config.risk.bands.high}</dd></div>
+            )}
           </dl>
           <div className="table-wrap">
             <table>

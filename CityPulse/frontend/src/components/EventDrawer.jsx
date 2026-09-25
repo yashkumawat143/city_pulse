@@ -3,6 +3,7 @@ import api from "../lib/api";
 import { clock, metricLabel, num } from "../lib/format";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { Card, Drawer, ErrorState, KeyValue, Loading, SevBadge, StatusPill, Tag } from "./ui";
+import { ConfidenceBreakdown } from "./panels";
 
 const LIFECYCLE_ORDER = ["DETECTED", "MONITORING", "ESCALATING", "PEAK", "RECOVERING", "ACKNOWLEDGED", "RESOLVED"];
 
@@ -13,6 +14,8 @@ const LIFECYCLE_ORDER = ["DETECTED", "MONITORING", "ESCALATING", "PEAK", "RECOVE
 export default function EventDrawer({ eventId, onClose, onChanged }) {
   const fetchDetail = useCallback(() => api.disruption(eventId), [eventId]);
   const { data, error, loading, reload } = useApiQuery(fetchDetail, [eventId], { enabled: Boolean(eventId) });
+  const fetchAnalyst = useCallback(() => api.analyst(eventId), [eventId]);
+  const ana = useApiQuery(fetchAnalyst, [eventId], { enabled: Boolean(eventId) });
   const [busy, setBusy] = useState(null);
   const [actionError, setActionError] = useState(null);
 
@@ -74,12 +77,22 @@ export default function EventDrawer({ eventId, onClose, onChanged }) {
               <StatusPill status={data.status} />
               <Tag tone="warn">State {data.state}</Tag>
               <Tag tone="info">Confidence {Math.round(data.confidence)}%</Tag>
+              {data.event_label && <Tag tone="info">{data.event_label}</Tag>}
+              {data.trend && <Tag tone="info">Trend {data.trend}</Tag>}
+              {data.risk_band && (
+                <Tag tone={data.risk_band === "CRITICAL" || data.risk_band === "HIGH" ? "warn" : "info"}>
+                  Risk {data.risk} · {data.risk_band}
+                </Tag>
+              )}
             </div>
             <KeyValue items={[
               ["Zone", data.zone],
               ["Identity", data.id],
+              ["Classification", data.event_type || "—"],
               ["Started", `${clock(data.started)} (city clock)`],
               ["Duration", `${data.duration_min} min`],
+              ["Trajectory", `${data.state}${data.trend ? ` · ${data.trend}` : ""}`],
+              ["Risk score", data.risk != null ? `${data.risk}/100 (${data.risk_band})` : "—"],
               ["Signal sequence", data.sequence],
               ["Independent sources", (data.sources || []).join(", ")],
               ["Peak score", num(data.peak, 2)],
@@ -90,6 +103,29 @@ export default function EventDrawer({ eventId, onClose, onChanged }) {
               CityPulse Event Confidence is a prototype score built from signal strength, signal diversity,
               co-activity time and persistence. It is not a probability.
             </p>
+          </Card>
+
+          <Card title="Confidence breakdown" subtitle="Explainable components behind the Event Confidence score">
+            {data.confidence_breakdown ? (
+              <ConfidenceBreakdown breakdown={data.confidence_breakdown} weights={data.confidence_weights} />
+            ) : (
+              <p className="muted">Breakdown unavailable for this event (recorded from the current engine version).</p>
+            )}
+          </Card>
+
+          <Card title="AI Civic Analyst" subtitle="Plain-language explanation generated from this event's evidence"
+                badge={<Tag tone="info">Explainable AI</Tag>}>
+            {ana.loading && !ana.data && <Loading label="Assembling the analyst brief…" rows={2} />}
+            {ana.error && <ErrorState message={ana.error} onRetry={ana.reload} />}
+            {ana.data && (
+              <>
+                <p>{ana.data.narrative}</p>
+                <p className="muted small">
+                  Engine: {ana.data.engine} · generated {clock(ana.data.generated_at)}
+                </p>
+                <p className="muted small">{ana.data.disclaimer}</p>
+              </>
+            )}
           </Card>
 
           <Card title="Detection rationale" subtitle="Why CityPulse raised this event (supporting observations only)">
