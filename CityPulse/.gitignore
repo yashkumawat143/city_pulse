@@ -13,6 +13,9 @@ frontend/dist/
 .env
 .streamlit/secrets.toml
 
+# Runtime logs (dev server / tunnel output — never part of the source)
+*.log
+
 # OS / editor noise
 .DS_Store
 Thumbs.db

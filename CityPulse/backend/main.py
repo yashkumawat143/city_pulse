@@ -956,6 +956,7 @@ class Sim:
                                                  str(d.get("lifecycle", {}))).lower():
                 continue
             if needle and needle not in (f"{d['id']} {d['zone']} {d['state']} {d['severity']} "
+                                         f"{d.get('event_label','')} {d.get('event_type','')} "
                                          f"{d.get('sequence','')} {d.get('note','')}").lower():
                 continue
             out.append(d)

@@ -1,22 +1,43 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LEVEL_META, SEV_META, healthBand, sevMeta } from "../lib/format";
 
-export function Card({ title, subtitle, badge, actions, children, className = "", id }) {
+export function Card({ title, subtitle, badge, actions, children, className = "", id, collapsible = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const toggle = () => setOpen((v) => !v);
+  const headProps = collapsible
+    ? {
+        className: "card-head card-head-toggle",
+        role: "button",
+        tabIndex: 0,
+        "aria-expanded": open,
+        onClick: toggle,
+        onKeyDown: (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        },
+      }
+    : { className: "card-head" };
   return (
-    <section className={`card ${className}`} id={id}>
+    <section className={`card ${className}${collapsible ? " card-collapsible" : ""}${collapsible && !open ? " collapsed" : ""}`} id={id}>
       {(title || actions) && (
-        <header className="card-head">
+        <header {...headProps}>
           <div>
-            {title && <h2 className="card-title">{title}</h2>}
+            {title && <h2 className="card-title">{title}{collapsible && <span className="card-chevron" aria-hidden="true">{open ? "▾" : "▸"}</span>}</h2>}
             {subtitle && <p className="card-sub">{subtitle}</p>}
           </div>
           <div className="card-actions">
             {badge}
             {actions}
+            {collapsible && (
+              <button type="button" className="btn ghost card-toggle-btn" aria-expanded={open}
+                      aria-label={open ? `Collapse ${title || "section"}` : `Expand ${title || "section"}`}
+                      onClick={(e) => { e.stopPropagation(); toggle(); }}>
+                {open ? "▴ Collapse" : "▾ Expand"}
+              </button>
+            )}
           </div>
         </header>
       )}
-      {children}
+      {open && children}
     </section>
   );
 }

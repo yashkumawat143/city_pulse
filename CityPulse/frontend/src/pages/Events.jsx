@@ -70,12 +70,12 @@ function EventSearchCard({ evQ, q, setQ, status, setStatus, zone, setZone, sever
   return (
     <Card
       title="Civic event search"
-      subtitle="Backend lifecycle records — search by text, zone, severity, status and signal type"
+      subtitle="Backend lifecycle records — search by event name, zone, severity, status and signal type"
       badge={<Tag tone="info">{(evQ.data || []).length} records</Tag>}
     >
       <FilterBar active={filtersActive}
                  onReset={() => { setQ(""); setStatus("all"); setZone("all"); setSeverity("all"); setMetric("all"); }}>
-        <SearchBox label="Search events" value={q} onChange={setQ} placeholder="event id, zone, state, note…" />
+        <SearchBox label="Search events" value={q} onChange={setQ} placeholder="event name, zone, state, note…" />
         <Select label="Status" value={status} onChange={setStatus} allLabel="All statuses"
                 options={[{ value: "active", label: "Active" }, { value: "acknowledged", label: "Acknowledged" },
                           { value: "resolved", label: "Resolved" }]} />
@@ -106,7 +106,10 @@ function EventSearchCard({ evQ, q, setQ, status, setStatus, zone, setZone, sever
             <tbody>
               {evQ.data.map((e) => (
                 <tr key={e.id}>
-                  <td><button type="button" className="link-btn" onClick={() => onInspectEvent(e.id)}>{e.id}</button></td>
+                  <td>
+                    <button type="button" className="link-btn" onClick={() => onInspectEvent(e.id)}>{e.event_label || e.id}</button>
+                    <div className="muted small">{e.id}</div>
+                  </td>
                   <td>{e.zone}</td>
                   <td>{e.state}</td>
                   <td><StatusPill status={e.status} /></td>

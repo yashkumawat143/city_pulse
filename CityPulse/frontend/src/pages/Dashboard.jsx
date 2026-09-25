@@ -21,7 +21,7 @@ export default function Dashboard({ snapshot, onInspectEvent, onEventAction, bus
       <div className="grid-main">
         <Card
           title="Live city map"
-          subtitle="Search zones, switch basemaps (Streets / Satellite / Terrain / Night) and inspect health, anomalies and civic events on stable synthetic coordinates"
+          subtitle="Search zones, switch basemaps (Light / Streets / Satellite / Terrain / Night) and inspect health, anomalies and civic events on stable synthetic coordinates"
           badge={<Tag tone="warn">Simulated</Tag>}
         >
           <CityMap zones={d.zones} anomalies={d.anomalies} events={events} onSelectEvent={(e) => onInspectEvent(e.id)} />

@@ -10,6 +10,17 @@ Leaflet + Recharts** dashboard over **REST + WebSocket**. No Streamlit.
 > Confidence and the health score are **prototype indicators** (not probabilities or
 > official metrics). All data is synthetic for a fictional city.
 
+### 🔗 Live demo
+
+**https://lanes-terminals-campbell-ace.trycloudflare.com**
+
+One public URL serving the built React dashboard *and* the FastAPI REST/WebSocket API
+(single-origin, so no CORS and no second host). Started with the
+[Instant public URL](#instant-public-url--no-cloud-account-needed) flow below.
+Quick-tunnel URLs are **ephemeral** — this link dies when the tunnel process or the
+machine stops, so treat it as a snapshot of the running app rather than a permanent
+link. For a stable address use the Render + Vercel path.
+
 ## Architecture
 
 ```mermaid
@@ -76,10 +87,11 @@ elsewhere — or for a single-origin production build — copy `.env.example` to
 The dashboard map is a Google-Maps-style Leaflet view over the backend zone
 registry (stable synthetic coordinates, never randomised per render):
 
-- **Four free basemaps** — Streets (OSM), Satellite (Esri imagery + place
+- **Five free basemaps** — Light (Esri Light Gray Canvas, the clean white
+  Google-Maps-like default), Streets (OSM), Satellite (Esri imagery + place
   labels), Terrain (OpenTopoMap) and Night (Esri Dark Gray Canvas). All are
-  key-less; CARTO dark tiles were dropped because they now require an API key
-  and render "API KEY REQUIRED" watermarks.
+  key-less; CARTO tiles were dropped entirely because both dark and light
+  styles now require an API key and render "API KEY REQUIRED" watermarks.
 - **Zone search** with results dropdown — Enter or click flies to the zone and
   opens its place card (health chips, live metric readings, zoom button).
 - **Layer toggles** for zones / anomaly dots / civic-event footprints; the
@@ -172,6 +184,36 @@ local and production API/WS URLs.
 `GET https://<backend>/api/health → {"status":"ok"}` and the Vercel app loads the
 dashboard with a LIVE badge. Note: Render free tier sleeps when idle — first load
 wakes it (~30–60 s); the frontend keeps usable REST fallback + reconnect meanwhile.
+
+### Instant public URL — no cloud account needed
+
+`backend/main.py` also serves the built React app (`frontend/dist`) from the same
+FastAPI process, so **one** public URL runs the whole project with REST + WebSocket
+on the same origin (no CORS, no second frontend host). This is the fastest way to
+share a running demo:
+
+```bash
+# 1. Build the frontend. Same-origin requires no frontend/.env — leave
+#    VITE_API_URL/VITE_WS_URL unset so every call stays relative.
+cd frontend && npm run build
+
+# 2. Run the backend so one process serves dist/ + the API/WebSocket
+cd ../backend && .venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+
+# 3. Publish that port with a Cloudflare quick tunnel (free, key-less)
+cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate
+# → https://<random-words>.trycloudflare.com
+```
+
+Current deployment (this run): `https://lanes-terminals-campbell-ace.trycloudflare.com`.
+
+Cloudflare passes WebSockets through, so the LIVE badge and streaming work
+unchanged (`lib/api.js` derives `wss://<tunnel-host>/ws/citypulse` from the page URL
+when `VITE_API_URL` is unset). Verify with `GET https://<tunnel-host>/api/health →
+{"status":"ok"}`, then start the sim from the UI or `POST /api/simulation/start` so
+the shared dashboard shows live data. Quick-tunnel URLs are **ephemeral** — they
+change on every restart and die with the tunnel process or the host machine; use the
+Render + Vercel path above when you need a stable URL.
 
 ## Limitations
 

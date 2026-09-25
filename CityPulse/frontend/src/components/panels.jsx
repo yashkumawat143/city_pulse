@@ -93,6 +93,7 @@ export function TimelinePanel({ timeline, onInspect }) {
   const items = [...(timeline || [])].slice(-40).reverse();
   return (
     <Card title="Event timeline" subtitle="Chronological detection history — built only from real backend records"
+          collapsible defaultOpen={false}
           badge={<Tag tone="info">{items.length} entries</Tag>}>
       {items.length === 0 ? (
         <Empty title="No timeline entries yet"
@@ -276,6 +277,7 @@ export function HealthBreakdown({ health }) {
 export function ActiveEventsPanel({ events, onInspect, onAction, busyId }) {
   return (
     <Card title="Active civic events" subtitle="Multi-signal disruptions tracked by the backend lifecycle"
+          collapsible defaultOpen={events.length <= 3}
           badge={<Tag tone="warn">{events.length} active</Tag>}>
       {events.length === 0 ? (
         <Empty title="No active civic events"

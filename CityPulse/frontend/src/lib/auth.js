@@ -37,7 +37,7 @@ export async function registerAccount(name, password) {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   // Auto sign-in: creating an account immediately opens the session,
   // so the user lands straight into the website without a second login.
-  try { sessionStorage.setItem(SESSION_KEY, normalizedName); } catch { /* storage may be disabled */ }
+  try { localStorage.setItem(SESSION_KEY, normalizedName); } catch { /* storage may be disabled */ }
   return { name: displayName };
 }
 
@@ -47,13 +47,13 @@ export async function loginAccount(name, password) {
   if (!account || !globalThis.crypto?.subtle) throw new Error("Name or password is incorrect.");
   const salt = new Uint8Array(account.salt.match(/.{2}/g).map((byte) => Number.parseInt(byte, 16)));
   if ((await passwordHash(password, salt)) !== account.hash) throw new Error("Name or password is incorrect.");
-  sessionStorage.setItem(SESSION_KEY, normalizedName);
+  localStorage.setItem(SESSION_KEY, normalizedName);
   return { name: account.name };
 }
 
 export function currentUser() {
   try {
-    const name = sessionStorage.getItem(SESSION_KEY);
+    const name = localStorage.getItem(SESSION_KEY);
     const account = name && readAccounts()[name];
     return account ? { name: account.name } : null;
   } catch {
@@ -62,5 +62,5 @@ export function currentUser() {
 }
 
 export function logoutAccount() {
-  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* storage may be disabled */ }
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* storage may be disabled */ }
 }

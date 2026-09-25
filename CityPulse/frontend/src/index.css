@@ -135,6 +135,13 @@ main { max-width: 1520px; margin: 0 auto; padding: 18px 20px 8px; }
   display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; justify-content: space-between;
   margin-bottom: 10px;
 }
+/* Collapsible cards — header row toggles the body; chevron + button show the state. */
+.card-collapsible > .card-head.card-head-toggle { cursor: pointer; user-select: none; }
+.card-collapsible > .card-head.card-head-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.card-collapsible > .card-head .card-sub { pointer-events: none; }
+.card-chevron { margin-left: 7px; font-size: 10px; color: var(--mut); }
+.card-toggle-btn { padding: 3px 9px; font-size: 11px; }
+.card-collapsible.collapsed { padding-bottom: 14px; }
 .card-title { font-size: 12.5px; letter-spacing: 1.1px; text-transform: uppercase; color: #c4cff0; }
 .card-sub { margin: 3px 0 0; font-size: 12px; color: var(--mut); max-width: 70ch; }
 .card-actions { display: flex; align-items: center; gap: 8px; }
@@ -241,9 +248,9 @@ dl.kv.compact > div { grid-template-columns: minmax(110px, 34%) minmax(0, 1fr); 
 .map-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; }
 .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--mut); }
 .check input { accent-color: var(--accent); }
-.leaflet-container { border-radius: 10px; background: #0a1224; }
+.leaflet-container { border-radius: 10px; background: #e8eaed; }
 /* Google-Maps-style controls layered over the tile canvas ------------------ */
-.map-stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #0a1224; }
+.map-stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #e8eaed; }
 .map-stage .leaflet-container { width: 100%; height: 100%; }
 .map-ctl { position: absolute; z-index: 1000; pointer-events: none; }
 .map-ctl button, .map-ctl input, .map-card { pointer-events: auto; }

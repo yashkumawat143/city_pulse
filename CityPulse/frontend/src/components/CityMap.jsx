@@ -7,11 +7,24 @@ const CITY_ZOOM = 13;
 
 /**
  * Google-Maps-style basemaps — free tile providers, no API key required:
- * Streets (OSM), Satellite (Esri imagery + place labels), Terrain (OpenTopoMap)
- * and Night (CARTO dark). Switching base remounts the tile layer; Leaflet's
+ * Light (Esri Light Gray Canvas — white, Google-like default), Streets (OSM),
+ * Satellite (Esri imagery + place labels), Terrain (OpenTopoMap) and Night
+ * (Esri Dark Gray Canvas). Switching base remounts the tile layer; Leaflet's
  * attribution control keeps every provider credited.
  */
 const BASE_LAYERS = [
+  {
+    // Esri Light Gray Canvas: clean white basemap, the closest free match to
+    // Google Maps' light style (CARTO's light tiles now require an API key).
+    id: "light",
+    label: "Light",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    maxZoom: 16,
+    maxNativeZoom: 15,
+    attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+    labels:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+  },
   {
     id: "streets",
     label: "Streets",
@@ -62,7 +75,7 @@ const BASE_LAYERS = [
  */
 export default function CityMap({ zones = [], anomalies = [], events = [], onSelectEvent, height = 460 }) {
   const [layers, setLayers] = useState({ zones: true, anomalies: true, events: true });
-  const [baseId, setBaseId] = useState("streets");
+  const [baseId, setBaseId] = useState("light");
   const [legendOpen, setLegendOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
