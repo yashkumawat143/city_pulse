@@ -2,7 +2,7 @@
 
 > **A real-time civic intelligence platform for monitoring city conditions, detecting anomalies, identifying possible multi-signal events, and supporting faster civic decision-making.**
 
-🔗 **Live Demo:** https://lanes-terminals-campbell-ace.trycloudflare.com/
+🔗 **Live Demo:** (https://married-graduate-guam-rpg.trycloudflare.com/login)
 
 ---
 
