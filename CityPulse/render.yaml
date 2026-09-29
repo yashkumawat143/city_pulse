@@ -1,14 +1,20 @@
+# Render.com blueprint — deploys CityPulse from this repo with one click.
+# Render builds the Docker image in the cloud (no local Docker needed), gives a
+# permanent https://<name>.onrender.com URL, and auto-deploys on every push.
+#
+# Deploy: Render dashboard → New → Blueprint → pick this repo → Apply.
+# Docs: https://render.com/docs/blueprint-spec
+
 services:
   - type: web
-    name: citypulse-backend
+    name: citypulse
     runtime: docker
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
+    plan: free
+    # Free instances sleep after ~15 min idle; first request after a sleep
+    # takes ~30-60 s to wake. Health checks keep it awake while anyone watches.
     healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
     envVars:
-      - key: CITYPULSE_ALLOWED_ORIGINS
-        value: https://citypulse-frontend.vercel.app
-      - key: CITYPULSE_ANOMALY_Z
-        value: "2.0"
-      - key: CITYPULSE_ANOMALY_PERSISTENCE
-        value: "0"
+      - key: PYTHON_VERSION
+        value: "3.12"

@@ -1,0 +1,11 @@
+backend/.venv/
+backend/uvicorn*.log
+backend/__pycache__/
+**/__pycache__/
+frontend/node_modules/
+frontend/dist/
+legacy_streamlit/
+scripts/
+*.log
+.env
+.git/
